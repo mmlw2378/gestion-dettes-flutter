@@ -1,3 +1,4 @@
+// lib/controllers/client_controller.dart - CONTRÔLEUR COMPLET
 import 'package:flutter/material.dart';
 import '../models/client_model.dart';
 import '../services/api_service.dart';
@@ -25,8 +26,7 @@ class ClientController {
   double get montantTotalRestant =>
       _clients.fold(0.0, (sum, client) => sum + client.totalDettes);
 
-  // ACTIONS DU CONTRÔLEUR
-
+  // MÉTHODE : Charger tous les clients
   Future<void> loadClients() async {
     print('🎮 Controller: Chargement des clients...');
     _setLoading(true);
@@ -48,6 +48,7 @@ class ClientController {
     }
   }
 
+  // MÉTHODE : Ajouter un client
   Future<bool> addClient(String nom, String telephone, String adresse) async {
     print('🎮 Controller: Ajout du client $nom...');
     _clearError();
@@ -90,6 +91,7 @@ class ClientController {
     }
   }
 
+  // MÉTHODE : Ajouter une dette à un client
   Future<bool> addDetteToClient(
     String clientId,
     String date,
@@ -153,6 +155,7 @@ class ClientController {
     }
   }
 
+  // MÉTHODE : Actualiser un client
   Future<void> refreshClient(String clientId) async {
     print('🎮 Controller: Actualisation du client $clientId...');
 
@@ -171,8 +174,7 @@ class ClientController {
     }
   }
 
-  // MÉTHODES DE CONSULTATION
-
+  // MÉTHODE : Récupérer un client par ID
   ClientModel? getClientById(String clientId) {
     try {
       return _clients.firstWhere((c) => c.id == clientId);
@@ -181,20 +183,162 @@ class ClientController {
     }
   }
 
+  // MÉTHODE : Récupérer les dettes d'un client
   List<DetteModel> getClientDettes(String clientId) {
     final client = getClientById(clientId);
     return client?.dettes ?? [];
   }
 
+  // MÉTHODE : Ajouter un paiement à une dette
+  Future<bool> ajouterPaiementADette(
+    String clientId,
+    String detteId,
+    String date,
+    double montant, {
+    String? commentaire,
+  }) async {
+    print(
+      '🎮 Controller: Ajout paiement à la dette $detteId du client $clientId...',
+    );
+    _clearError();
+
+    try {
+      // Validation métier
+      if (montant <= 0) {
+        const errorMsg = 'Le montant du paiement doit être positif';
+        _setError(errorMsg);
+        onError?.call(errorMsg);
+        return false;
+      }
+
+      // Trouver le client
+      final clientIndex = _clients.indexWhere((c) => c.id == clientId);
+      if (clientIndex == -1) {
+        const errorMsg = 'Client non trouvé';
+        _setError(errorMsg);
+        onError?.call(errorMsg);
+        return false;
+      }
+
+      final client = _clients[clientIndex];
+
+      // Trouver la dette
+      final detteIndex = client.dettes.indexWhere((d) => d.id == detteId);
+      if (detteIndex == -1) {
+        const errorMsg = 'Dette non trouvée';
+        _setError(errorMsg);
+        onError?.call(errorMsg);
+        return false;
+      }
+
+      final dette = client.dettes[detteIndex];
+
+      // Vérifier que le paiement ne dépasse pas le montant restant
+      if (montant > dette.montantRestant) {
+        final errorMsg =
+            'Le paiement (${montant.toStringAsFixed(0)} FCFA) dépasse le montant restant (${dette.montantRestant.toStringAsFixed(0)} FCFA)';
+        _setError(errorMsg);
+        onError?.call(errorMsg);
+        return false;
+      }
+
+      // Créer le nouveau paiement
+      final nouveauPaiement = PaiementModel(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        date: date,
+        montant: montant,
+        commentaire: commentaire,
+      );
+
+      // Ajouter le paiement à la dette
+      final detteAvecPaiement = dette.ajouterPaiement(nouveauPaiement);
+
+      // Mettre à jour la liste des dettes du client
+      final nouvellesDettes = List<DetteModel>.from(client.dettes);
+      nouvellesDettes[detteIndex] = detteAvecPaiement;
+
+      // Mettre à jour le client
+      final clientMisAJour = client.copyWith(dettes: nouvellesDettes);
+
+      // Appeler l'API pour sauvegarder
+      final result = await ApiService.updateClientJson(
+        clientId,
+        clientMisAJour.toJson(),
+      );
+
+      // Mettre à jour la liste locale
+      _clients[clientIndex] = ClientModel.fromJson(result);
+
+      final successMsg =
+          'Paiement de ${montant.toStringAsFixed(0)} FCFA ajouté';
+      print('✅ Controller: $successMsg');
+      onSuccess?.call(successMsg);
+      _notifyChange();
+      return true;
+    } catch (e) {
+      final errorMsg = 'Erreur lors de l\'ajout du paiement: $e';
+      _setError(errorMsg);
+      onError?.call(errorMsg);
+      print('❌ Controller: $errorMsg');
+      return false;
+    }
+  }
+
+  // MÉTHODE : Récupérer les paiements d'une dette
+  List<PaiementModel> getPaiementsDette(String clientId, String detteId) {
+    try {
+      final client = _clients.firstWhere((c) => c.id == clientId);
+      final dette = client.dettes.firstWhere((d) => d.id == detteId);
+      return dette.paiements;
+    } catch (e) {
+      print('❌ Controller: Impossible de récupérer les paiements: $e');
+      return [];
+    }
+  }
+
+  // MÉTHODE : Récupérer une dette spécifique
+  DetteModel? getDette(String clientId, String detteId) {
+    try {
+      final client = _clients.firstWhere((c) => c.id == clientId);
+      return client.dettes.firstWhere((d) => d.id == detteId);
+    } catch (e) {
+      print('❌ Controller: Dette non trouvée: $e');
+      return null;
+    }
+  }
+
+  // MÉTHODE : Récupérer clients avec dettes
   List<ClientModel> getClientsWithDebts() {
     return _clients.where((client) => client.hasDebts).toList();
   }
 
+  // MÉTHODE : Récupérer clients sans dettes
   List<ClientModel> getClientsWithoutDebts() {
     return _clients.where((client) => !client.hasDebts).toList();
   }
 
-  // MÉTHODES PRIVÉES
+  // MÉTHODE : Statistiques des paiements
+  Map<String, dynamic> getStatistiquesPaiements() {
+    int totalPaiements = 0;
+    double montantTotalPaiements = 0.0;
+
+    for (final client in _clients) {
+      for (final dette in client.dettes) {
+        totalPaiements += dette.paiements.length;
+        montantTotalPaiements += dette.montantPaye;
+      }
+    }
+
+    return {
+      'totalPaiements': totalPaiements,
+      'montantTotalPaiements': montantTotalPaiements,
+      'moyennePaiement': totalPaiements > 0
+          ? montantTotalPaiements / totalPaiements
+          : 0.0,
+    };
+  }
+
+  // MÉTHODES DE VALIDATION PRIVÉES
 
   String? _validateClientData(String nom, String telephone, String adresse) {
     if (nom.trim().isEmpty) return 'Le nom est obligatoire';
@@ -219,6 +363,8 @@ class ClientController {
       return 'Le montant ne peut pas dépasser 1 000 000 FCFA';
     return null;
   }
+
+  // MÉTHODES UTILITAIRES PRIVÉES
 
   void _setLoading(bool loading) {
     _isLoading = loading;

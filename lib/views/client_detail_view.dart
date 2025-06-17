@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../controllers/client_controller.dart';
 import '../models/client_model.dart';
 import 'add_dette_view.dart';
+import 'dette_detail_view.dart';
 
 class ClientDetailView extends StatefulWidget {
   final ClientModel client;
@@ -210,43 +211,70 @@ class _ClientDetailViewState extends State<ClientDetailView> {
   Widget _buildDetteCard(DetteModel dette) {
     return Container(
       margin: EdgeInsets.only(bottom: 8),
-      padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.grey.shade300),
       ),
-      child: Row(
-        children: [
-          Icon(
-            dette.montantRestant > 0 ? Icons.attach_money : Icons.check_circle,
-            color: dette.montantRestant > 0 ? Colors.red : Colors.green,
-          ),
-          SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: () =>
+              _navigateToDetteDetail(dette), // ← NAVIGATION VERS DÉTAIL
+          child: Padding(
+            padding: EdgeInsets.all(12),
+            child: Row(
               children: [
-                Text(
-                  'Dette du ${dette.date}',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                Icon(
+                  dette.montantRestant > 0
+                      ? Icons.attach_money
+                      : Icons.check_circle,
+                  color: dette.montantRestant > 0 ? Colors.red : Colors.green,
                 ),
-                Text('Montant: ${dette.montantDette.toStringAsFixed(0)} FCFA'),
-                Text(
-                  'Restant: ${dette.montantRestant.toStringAsFixed(0)} FCFA',
-                  style: TextStyle(
-                    color: dette.montantRestant > 0 ? Colors.red : Colors.green,
-                    fontWeight: FontWeight.w500,
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Dette du ${dette.date}',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        'Montant: ${dette.montantDette.toStringAsFixed(0)} FCFA',
+                      ),
+                      Text(
+                        'Restant: ${dette.montantRestant.toStringAsFixed(0)} FCFA',
+                        style: TextStyle(
+                          color: dette.montantRestant > 0
+                              ? Colors.red
+                              : Colors.green,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      // ← AFFICHAGE DES PAIEMENTS
+                      Text(
+                        '${dette.paiements.length} paiement(s) - ${dette.montantPaye.toStringAsFixed(0)} FCFA payé',
+                        style: TextStyle(fontSize: 12, color: Colors.blue),
+                      ),
+                    ],
                   ),
+                ),
+                Column(
+                  children: [
+                    Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                    SizedBox(height: 4),
+                    Text(
+                      'Voir détails',
+                      style: TextStyle(fontSize: 10, color: Colors.grey),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          Text(
-            '${dette.paiements.length} paiement(s)',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -257,6 +285,20 @@ class _ClientDetailViewState extends State<ClientDetailView> {
       MaterialPageRoute(
         builder: (context) =>
             AddDetteView(client: _currentClient, controller: widget.controller),
+      ),
+    );
+  }
+
+  // ← NOUVELLE NAVIGATION VERS DÉTAIL DETTE
+  void _navigateToDetteDetail(DetteModel dette) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DetteDetailView(
+          client: _currentClient,
+          dette: dette,
+          controller: widget.controller,
+        ),
       ),
     );
   }
