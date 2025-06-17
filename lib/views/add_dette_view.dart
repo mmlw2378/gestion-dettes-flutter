@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../models/client.dart';
-import '../providers/client_provider.dart';
+import '../controllers/client_controller.dart';
+import '../models/client_model.dart';
 
-class AddDetteScreen extends StatefulWidget {
-  final Client client;
+class AddDetteView extends StatefulWidget {
+  final ClientModel client;
+  final ClientController controller;
 
-  const AddDetteScreen({Key? key, required this.client}) : super(key: key);
+  const AddDetteView({Key? key, required this.client, required this.controller})
+    : super(key: key);
 
   @override
-  _AddDetteScreenState createState() => _AddDetteScreenState();
+  _AddDetteViewState createState() => _AddDetteViewState();
 }
 
-class _AddDetteScreenState extends State<AddDetteScreen> {
+class _AddDetteViewState extends State<AddDetteView> {
   final _formKey = GlobalKey<FormState>();
   final _montantController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
-  bool _isLoading = false;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -28,48 +29,41 @@ class _AddDetteScreenState extends State<AddDetteScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Ajouter une Dette'),
+        title: Text('Nouvelle Dette'),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Informations du client
-              Container(
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blue.shade200),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Client: ${widget.client.nom}',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue.shade800,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text('Téléphone: ${widget.client.telephone}'),
-                    if (widget.client.id != null)
+              Card(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        'ID: ${widget.client.id}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                        'Client: ${widget.client.nom}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                  ],
+                      SizedBox(height: 4),
+                      Text('Téléphone: ${widget.client.telephone}'),
+                      SizedBox(height: 4),
+                      Text('Dettes actuelles: ${widget.client.nombreDettes}'),
+                    ],
+                  ),
                 ),
               ),
 
-              SizedBox(height: 24),
+              SizedBox(height: 20),
 
               // Date de la dette
               InkWell(
@@ -82,12 +76,14 @@ class _AddDetteScreenState extends State<AddDetteScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.calendar_today, color: Colors.grey[600]),
+                      Icon(Icons.calendar_today, color: Colors.green),
                       SizedBox(width: 12),
                       Text(
                         'Date: ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
                         style: TextStyle(fontSize: 16),
                       ),
+                      Spacer(),
+                      Icon(Icons.arrow_drop_down),
                     ],
                   ),
                 ),
@@ -119,14 +115,30 @@ class _AddDetteScreenState extends State<AddDetteScreen> {
               SizedBox(height: 24),
 
               ElevatedButton(
-                onPressed: _isLoading ? null : _addDette,
+                onPressed: _isSubmitting ? null : _submitForm,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: _isLoading
-                    ? CircularProgressIndicator(color: Colors.white)
+                child: _isSubmitting
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Text('Ajout en cours...'),
+                        ],
+                      )
                     : Text('Ajouter la Dette', style: TextStyle(fontSize: 16)),
               ),
             ],
@@ -150,10 +162,9 @@ class _AddDetteScreenState extends State<AddDetteScreen> {
     }
   }
 
-  Future<void> _addDette() async {
+  Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Vérifier que le client a un ID
     if (widget.client.id == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -165,48 +176,25 @@ class _AddDetteScreenState extends State<AddDetteScreen> {
     }
 
     setState(() {
-      _isLoading = true;
+      _isSubmitting = true;
     });
 
-    try {
-      final dette = Dette(
-        date:
-            '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-        montantDette: double.parse(_montantController.text),
-      );
+    final dateString =
+        '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}';
+    final montant = double.parse(_montantController.text);
 
-      print('🔄 Ajout dette pour client ID: ${widget.client.id}');
+    final success = await widget.controller.addDetteToClient(
+      widget.client.id!,
+      dateString,
+      montant,
+    );
 
-      final success = await Provider.of<ClientProvider>(
-        context,
-        listen: false,
-      ).addDetteToClient(widget.client.id!, dette);
+    setState(() {
+      _isSubmitting = false;
+    });
 
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Dette ajoutée avec succès'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pop(context);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur lors de l\'ajout de la dette'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      print('❌ Erreur dans _addDette: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+    if (success) {
+      Navigator.pop(context);
     }
   }
 }

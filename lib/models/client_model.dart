@@ -1,11 +1,11 @@
-class Client {
+class ClientModel {
   final String? id;
   final String nom;
   final String telephone;
   final String adresse;
-  final List<Dette> dettes;
+  final List<DetteModel> dettes;
 
-  Client({
+  ClientModel({
     this.id,
     required this.nom,
     required this.telephone,
@@ -13,15 +13,15 @@ class Client {
     this.dettes = const [],
   });
 
-  factory Client.fromJson(Map<String, dynamic> json) {
-    return Client(
+  factory ClientModel.fromJson(Map<String, dynamic> json) {
+    return ClientModel(
       id: json['id']?.toString(),
       nom: json['nom']?.toString() ?? '',
       telephone: json['telephone']?.toString() ?? '',
       adresse: json['adresse']?.toString() ?? '',
       dettes:
           (json['dettes'] as List<dynamic>?)
-              ?.map((dette) => Dette.fromJson(dette))
+              ?.map((dette) => DetteModel.fromJson(dette))
               .toList() ??
           [],
     );
@@ -37,14 +37,27 @@ class Client {
     };
   }
 
-  Client copyWith({
+  // Méthodes métier du modèle
+  double get totalDettes {
+    return dettes.fold(0.0, (sum, dette) => sum + dette.montantRestant);
+  }
+
+  bool get hasDebts {
+    return totalDettes > 0;
+  }
+
+  int get nombreDettes {
+    return dettes.length;
+  }
+
+  ClientModel copyWith({
     String? id,
     String? nom,
     String? telephone,
     String? adresse,
-    List<Dette>? dettes,
+    List<DetteModel>? dettes,
   }) {
-    return Client(
+    return ClientModel(
       id: id ?? this.id,
       nom: nom ?? this.nom,
       telephone: telephone ?? this.telephone,
@@ -54,13 +67,13 @@ class Client {
   }
 }
 
-class Dette {
+class DetteModel {
   final String? id;
   final String date;
   final double montantDette;
-  final List<Paiement> paiements;
+  final List<PaiementModel> paiements;
 
-  Dette({
+  DetteModel({
     this.id,
     required this.date,
     required this.montantDette,
@@ -75,14 +88,14 @@ class Dette {
     return montantDette - montantPaye;
   }
 
-  factory Dette.fromJson(Map<String, dynamic> json) {
-    return Dette(
+  factory DetteModel.fromJson(Map<String, dynamic> json) {
+    return DetteModel(
       id: json['id']?.toString(),
       date: json['date']?.toString() ?? '',
       montantDette: _parseToDouble(json['montantDette']),
       paiements:
           (json['paiements'] as List<dynamic>?)
-              ?.map((paiement) => Paiement.fromJson(paiement))
+              ?.map((paiement) => PaiementModel.fromJson(paiement))
               .toList() ??
           [],
     );
@@ -101,39 +114,27 @@ class Dette {
     if (value == null) return 0.0;
     if (value is double) return value;
     if (value is int) return value.toDouble();
-    if (value is String) {
-      return double.tryParse(value) ?? 0.0;
-    }
+    if (value is String) return double.tryParse(value) ?? 0.0;
     return 0.0;
   }
 }
 
-class Paiement {
+class PaiementModel {
   final String? id;
   final String date;
   final double montant;
 
-  Paiement({this.id, required this.date, required this.montant});
+  PaiementModel({this.id, required this.date, required this.montant});
 
-  factory Paiement.fromJson(Map<String, dynamic> json) {
-    return Paiement(
+  factory PaiementModel.fromJson(Map<String, dynamic> json) {
+    return PaiementModel(
       id: json['id']?.toString(),
       date: json['date']?.toString() ?? '',
-      montant: _parseToDouble(json['montant']),
+      montant: DetteModel._parseToDouble(json['montant']),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {if (id != null) 'id': id, 'date': date, 'montant': montant};
-  }
-
-  static double _parseToDouble(dynamic value) {
-    if (value == null) return 0.0;
-    if (value is double) return value;
-    if (value is int) return value.toDouble();
-    if (value is String) {
-      return double.tryParse(value) ?? 0.0;
-    }
-    return 0.0;
   }
 }

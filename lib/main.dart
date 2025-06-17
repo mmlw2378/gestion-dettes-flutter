@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'providers/client_provider.dart';
-import 'screens/home_screen.dart';
+import 'views/home_view.dart';
 
 void main() {
   runApp(MyApp());
@@ -10,17 +8,14 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => ClientProvider())],
-      child: MaterialApp(
-        title: 'Gestion des Dettes',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          visualDensity: VisualDensity.adaptivePlatformDensity,
-        ),
-        home: HomeScreen(),
-        debugShowCheckedModeBanner: false,
+    return MaterialApp(
+      title: 'Gestion des Dettes - MVC',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
+      home: HomeView(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }

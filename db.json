@@ -7,12 +7,12 @@
       "adresse": "Dakar, Plateau",
       "dettes": [
         {
-          "id": 1,
+          "id": "1",
           "date": "15/06/2025",
           "montantDette": 50000,
           "paiements": [
             {
-              "id": 1,
+              "id": "1",
               "date": "16/06/2025",
               "montant": 20000
             }
@@ -21,6 +21,12 @@
         {
           "date": "17/6/2025",
           "montantDette": 250000,
+          "paiements": []
+        },
+        {
+          "id": "1750191647325",
+          "date": "9/6/2025",
+          "montantDette": 245000,
           "paiements": []
         }
       ]
@@ -63,6 +69,12 @@
           "date": "17/6/2025",
           "montantDette": 147000,
           "paiements": []
+        },
+        {
+          "id": "1750192182818",
+          "date": "12/6/2025",
+          "montantDette": 25000,
+          "paiements": []
         }
       ]
     },
@@ -78,6 +90,13 @@
       "nom": "Elimane Ndiaye",
       "telephone": "774369582",
       "adresse": "Almadies",
+      "dettes": []
+    },
+    {
+      "id": "2ac2",
+      "nom": "Modou Sall",
+      "telephone": "774125689",
+      "adresse": "Niary Tally",
       "dettes": []
     }
   ]

@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../models/client.dart';
-import '../providers/client_provider.dart';
+import '../controllers/client_controller.dart';
 
-class AddClientScreen extends StatefulWidget {
+class AddClientView extends StatefulWidget {
+  final ClientController controller;
+
+  const AddClientView({Key? key, required this.controller}) : super(key: key);
+
   @override
-  _AddClientScreenState createState() => _AddClientScreenState();
+  _AddClientViewState createState() => _AddClientViewState();
 }
 
-class _AddClientScreenState extends State<AddClientScreen> {
+class _AddClientViewState extends State<AddClientView> {
   final _formKey = GlobalKey<FormState>();
   final _nomController = TextEditingController();
   final _telephoneController = TextEditingController();
   final _adresseController = TextEditingController();
-  bool _isLoading = false;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -27,21 +29,22 @@ class _AddClientScreenState extends State<AddClientScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Ajouter un Client'),
+        title: Text('Nouveau Client'),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              SizedBox(height: 20),
               TextFormField(
                 controller: _nomController,
                 decoration: InputDecoration(
-                  labelText: 'Nom du client',
+                  labelText: 'Nom complet',
                   prefixIcon: Icon(Icons.person),
                   border: OutlineInputBorder(),
                 ),
@@ -86,14 +89,28 @@ class _AddClientScreenState extends State<AddClientScreen> {
               ),
               SizedBox(height: 24),
               ElevatedButton(
-                onPressed: _isLoading ? null : _addClient,
+                onPressed: _isSubmitting ? null : _submitForm,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: _isLoading
-                    ? CircularProgressIndicator(color: Colors.white)
+                child: _isSubmitting
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Text('Ajout en cours...'),
+                        ],
+                      )
                     : Text('Ajouter le Client', style: TextStyle(fontSize: 16)),
               ),
             ],
@@ -103,41 +120,25 @@ class _AddClientScreenState extends State<AddClientScreen> {
     );
   }
 
-  Future<void> _addClient() async {
+  Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
-      _isLoading = true;
+      _isSubmitting = true;
     });
 
-    final client = Client(
-      nom: _nomController.text.trim(),
-      telephone: _telephoneController.text.trim(),
-      adresse: _adresseController.text.trim(),
+    final success = await widget.controller.addClient(
+      _nomController.text,
+      _telephoneController.text,
+      _adresseController.text,
     );
 
-    final success = await Provider.of<ClientProvider>(context, listen: false)
-        .addClient(client);
-
     setState(() {
-      _isLoading = false;
+      _isSubmitting = false;
     });
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Client ajouté avec succès'),
-          backgroundColor: Colors.green,
-        ),
-      );
       Navigator.pop(context);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erreur lors de l\'ajout du client'),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
 }
