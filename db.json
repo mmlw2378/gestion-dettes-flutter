@@ -1,0 +1,84 @@
+{
+  "clients": [
+    {
+      "id": "1",
+      "nom": "Amadou Diallo",
+      "telephone": "77 123 45 67",
+      "adresse": "Dakar, Plateau",
+      "dettes": [
+        {
+          "id": 1,
+          "date": "15/06/2025",
+          "montantDette": 50000,
+          "paiements": [
+            {
+              "id": 1,
+              "date": "16/06/2025",
+              "montant": 20000
+            }
+          ]
+        },
+        {
+          "date": "17/6/2025",
+          "montantDette": 250000,
+          "paiements": []
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "nom": "Fatou Sall",
+      "telephone": "78 987 65 43",
+      "adresse": "Dakar, Almadies",
+      "dettes": [
+        {
+          "id": 2,
+          "date": "10/06/2025",
+          "montantDette": 75000,
+          "paiements": []
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "nom": "Ousmane Ba",
+      "telephone": "76 555 44 33",
+      "adresse": "Thiès, Centre Ville",
+      "dettes": []
+    },
+    {
+      "id": "6e4d",
+      "nom": "Marie Louise Wadd",
+      "telephone": "774521548",
+      "adresse": "Zone de captage",
+      "dettes": [
+        {
+          "id": "1750187181970",
+          "date": "12/6/2025",
+          "montantDette": 567500,
+          "paiements": []
+        },
+        {
+          "id": "1750187190679",
+          "date": "17/6/2025",
+          "montantDette": 147000,
+          "paiements": []
+        }
+      ]
+    },
+    {
+      "id": "0f7a",
+      "nom": "Aminata Wadd",
+      "telephone": "776492580",
+      "adresse": "Parcelles Assainies Unité 12",
+      "dettes": []
+    },
+    {
+      "id": "8164",
+      "nom": "Elimane Ndiaye",
+      "telephone": "774369582",
+      "adresse": "Almadies",
+      "dettes": []
+    }
+  ]
+}
